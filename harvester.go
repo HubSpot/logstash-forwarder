@@ -136,10 +136,6 @@ func filter(harvester *Harvester, matcher *regexp.Regexp, pending *bytes.Buffer,
     panic(fmt.Sprintf("multiline of what=%s is not supported\n", harvester.Multiline.What))		
   }		
 
-  if accept && *previousMatch {      				// if we are sending text and previous line is matched, then tag it as multiline text
-    harvester.Fields["multiline"] = "true"
-  }            
-
   *previousMatch = match							// capture matching state 
 
   return accept, text_to_send
