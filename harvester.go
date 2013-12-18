@@ -110,7 +110,14 @@ func filter(harvester *Harvester, matcher *regexp.Regexp, pending *bytes.Buffer,
   
   match := (matcher.MatchString(text) && !harvester.Multiline.Negate) || (!matcher.MatchString(text) && harvester.Multiline.Negate)
 
-  if harvester.Multiline.What == "previous" {    
+  if harvester.Multiline.What == "previous" {    	// merging with previous unmatched text (event)
+    if !match && pending.Len() != 0 {				// unmatched always go into the buffer and get merged with matched if any, unmatched always trigger sending of previous buffer
+      text_to_send = pending.String()
+      pending.Reset()
+      accept = true
+    }
+    pending.WriteString(text) 			
+  } else if harvester.Multiline.What == "not_merged" {    // multiline doesn't merge, stands alone
     if match {	
       if !*previousMatch && pending.Len() != 0 {	// this is sending the unmatched text previously in the pending buffer
         text_to_send = pending.String()
@@ -123,7 +130,7 @@ func filter(harvester *Harvester, matcher *regexp.Regexp, pending *bytes.Buffer,
       accept = true
     }
     pending.WriteString(text) 			
-  } else if harvester.Multiline.What == "next" {
+  } else if harvester.Multiline.What == "next" {	// merging with next unmatched text (event)
     if match {	
       pending.WriteString(text) 			
     } else {
