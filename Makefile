@@ -14,7 +14,7 @@ CFLAGS+=-Ibuild/include
 LDFLAGS+=-Lbuild/lib -Wl,-rpath,'$$ORIGIN/../lib'
 
 default: build-all
-build-all: build/bin/logstash-forwarder build/bin/logstash-forwarder.sh
+build-all: build/bin/logstash-forwarder build/bin/logstash-forwarder.sh build/bin/remove_lumberjack.sh
 #build-all: build/bin/keygen
 include Makefile.ext
 
@@ -51,6 +51,7 @@ rpm deb: | build-all
 		--exclude '*.a' --exclude 'lib/pkgconfig/zlib.pc' \
 		--description "a log shipping tool" \
 		--url "https://github.com/elasticsearch/logstash-forwarder" \
+		--before-install build/bin/remove_lumberjack.sh \
 		build/bin/logstash-forwarder=$(PREFIX)/bin/ \
 		build/bin/logstash-forwarder.sh=$(PREFIX)/bin/ \
 		logstash-forwarder.init=/etc/init.d/logstash-forwarder
