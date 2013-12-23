@@ -35,3 +35,5 @@ if [[ "${#lumberjack_pid_files[@]}" > 0 ]]		# stop lumberjack processes if any
         fi
     done
 fi
+
+rm -rf /etc/init.d/*lumberjack*
