@@ -25,6 +25,7 @@ type FileConfig struct {
   Paths []string `json:paths`
   Fields map[string]string `json:fields`
   Multiline MultilineConfig `json:"multiline"`
+  DropEmtpyLine bool `json:"dropemptyline"`
 }
 
 type MultilineConfig struct {
@@ -32,6 +33,7 @@ type MultilineConfig struct {
   Pattern string `json:"pattern"`
   Negate bool `json:"negate"`
   What string `json:"what"`
+
 }
 
 func LoadConfig(path string) (config Config, err error) {

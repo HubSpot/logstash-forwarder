@@ -9,6 +9,7 @@ import (
   "time"
   "regexp"
   "fmt"
+  "strings"
 )
 
 type Harvester struct {
@@ -16,7 +17,8 @@ type Harvester struct {
   Fields map[string]string
   Offset int64
   Multiline MultilineConfig
-
+  DropEmtpyLine bool
+  
   file *os.File /* the file being watched */
 }
 
@@ -104,6 +106,10 @@ func filter(harvester *Harvester, matcher *regexp.Regexp, pending *bytes.Buffer,
 
   accept = false
 
+  if harvester.DropEmtpyLine && strings.Trim(text, " ") == "" {
+	return false, text
+  }
+  
   if !harvester.Multiline.Enabled {
 	return true, text
   } 

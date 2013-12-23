@@ -2,6 +2,7 @@
 	{"fields":
 		{"cluster":"gus-qa","env":"qa","type":"hbase_regionserver"},
 		"paths":["/var/log/java.log"],
+		"dropemptyline":true,		
 		"multiline":
 			{"enable":true,
 			 "pattern":"(^\\d+\\serror)|(^.+Exception: .+)|(^\\s+at .+)|(^\\s+... \\d+ more)|(^\\s*Caused by:.+)",
