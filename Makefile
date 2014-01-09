@@ -1,4 +1,4 @@
-VERSION=0.3.1
+VERSION=0.3.2
 
 # By default, all dependencies (zeromq, etc) will be downloaded and installed
 # locally. You can change this if you are deploying your own.
@@ -51,7 +51,6 @@ rpm deb: | build-all
 		--exclude '*.a' --exclude 'lib/pkgconfig/zlib.pc' \
 		--description "a log shipping tool" \
 		--url "https://github.com/elasticsearch/logstash-forwarder" \
-		--before-install build/bin/remove_lumberjack.sh \
 		build/bin/logstash-forwarder=$(PREFIX)/bin/ \
 		build/bin/logstash-forwarder.sh=$(PREFIX)/bin/ \
 		logstash-forwarder.init=/etc/init.d/logstash-forwarder
