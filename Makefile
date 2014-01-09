@@ -14,7 +14,7 @@ CFLAGS+=-Ibuild/include
 LDFLAGS+=-Lbuild/lib -Wl,-rpath,'$$ORIGIN/../lib'
 
 default: build-all
-build-all: build/bin/logstash-forwarder build/bin/logstash-forwarder.sh build/bin/remove_lumberjack.sh
+build-all: build/bin/logstash-forwarder build/bin/logstash-forwarder.sh
 #build-all: build/bin/keygen
 include Makefile.ext
 
