@@ -7,17 +7,31 @@ import (
   "io"
   "bufio"
   "time"
+  "regexp"
+  "fmt"
+  "strings"
 )
 
 type Harvester struct {
   Path string /* the file path to harvest */
   Fields map[string]string
   Offset int64
-
+  Multiline MultilineConfig
+  DropEmtpyLine bool
+  
   file *os.File /* the file being watched */
 }
 
 func (h *Harvester) Harvest(output chan *FileEvent) {
+
+  var pending bytes.Buffer
+  var previousMatch bool
+  var multilineMatcher *regexp.Regexp
+
+  if h.Multiline.Enabled {
+  	multilineMatcher = regexp.MustCompile(h.Multiline.Pattern)
+  }
+
   if h.Offset > 0 {
     log.Printf("Starting harvester at position %d: %s\n", h.Offset, h.Path)
   } else {
@@ -70,18 +84,74 @@ func (h *Harvester) Harvest(output chan *FileEvent) {
     last_read_time = time.Now()
 
     line++
-    event := &FileEvent{
-      Source: &h.Path,
-      Offset: offset,
-      Line: line,
-      Text: text,
-      Fields: &h.Fields,
-      fileinfo: &info,
-    }
-    offset += int64(len(*event.Text)) + 1  // +1 because of the line terminator
+    offset += int64(len(*text)) + 1  // +1 because of the line terminator
 
-    output <- event // ship the new event downstream
+    accept, text_to_send := filter(h, multilineMatcher, &pending, *text, &previousMatch)
+
+    if accept {
+      output <- &FileEvent{
+        Source: &h.Path,
+        Offset: offset,
+        Line: line,
+        Text: &text_to_send,
+        Fields: &h.Fields,
+        fileinfo: &info,
+      }
+    }
+
   } /* forever */
+}
+
+func filter(harvester *Harvester, matcher *regexp.Regexp, pending *bytes.Buffer, text string, previousMatch *bool) (accept bool, text_to_send string) {
+
+  accept = false
+
+  if harvester.DropEmtpyLine && strings.Trim(text, " ") == "" {
+	return false, text
+  }
+  
+  if !harvester.Multiline.Enabled {
+	return true, text
+  } 
+  
+  match := (matcher.MatchString(text) && !harvester.Multiline.Negate) || (!matcher.MatchString(text) && harvester.Multiline.Negate)
+
+  if harvester.Multiline.What == "previous" {    	// merging with previous unmatched text (event)
+    if !match && pending.Len() != 0 {				// unmatched always go into the buffer and get merged with matched if any, unmatched always trigger sending of previous buffer
+      text_to_send = pending.String()
+      pending.Reset()
+      accept = true
+    }
+    pending.WriteString(text) 			
+  } else if harvester.Multiline.What == "not_merged" {    // multiline doesn't merge, stands alone
+    if match {	
+      if !*previousMatch && pending.Len() != 0 {	// this is sending the unmatched text previously in the pending buffer
+        text_to_send = pending.String()
+        pending.Reset()
+        accept = true          
+      }
+    } else if pending.Len() != 0 {					// hitting an unmatched text and thus flushing pending buffer regardless of previous state
+      text_to_send = pending.String()
+      pending.Reset()
+      accept = true
+    }
+    pending.WriteString(text) 			
+  } else if harvester.Multiline.What == "next" {	// merging with next unmatched text (event)
+    if match {	
+      pending.WriteString(text) 			
+    } else {
+      pending.WriteString(text) 					// hitting an unmatched text and thus flushing pending buffer along with unmatched text
+      text_to_send = pending.String()
+      pending.Reset()
+      accept = true			
+    }
+  } else {
+    panic(fmt.Sprintf("multiline of what=%s is not supported\n", harvester.Multiline.What))		
+  }		
+
+  *previousMatch = match							// capture matching state 
+
+  return accept, text_to_send
 }
 
 func (h *Harvester) open() *os.File {

@@ -24,7 +24,16 @@ type NetworkConfig struct {
 type FileConfig struct {
   Paths []string `json:paths`
   Fields map[string]string `json:fields`
-  //DeadTime time.Duration `json:"dead time"`
+  Multiline MultilineConfig `json:"multiline"`
+  DropEmtpyLine bool `json:"dropemptyline"`
+}
+
+type MultilineConfig struct {
+  Enabled bool `json:"enable"`
+  Pattern string `json:"pattern"`
+  Negate bool `json:"negate"`
+  What string `json:"what"`
+
 }
 
 func LoadConfig(path string) (config Config, err error) {
